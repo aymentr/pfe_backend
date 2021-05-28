@@ -3,11 +3,11 @@ const { Schema, model } = require("mongoose");
 const History = new Schema({
     table: {
         type: String,
-        required: false
+        enum: ["Lines", "Machines"]
     },
     operation: {
         type: String,
-        required: true
+        enum: ["Add", "Update", "Delete"]
     },
     doc_id: {
         type: String,
@@ -21,10 +21,12 @@ const History = new Schema({
         type: String,
         required: false
     },
-    UpdatedAt: {
+    updated: { type: Object },
+    updatedAt: {
         type: Date,
         default: Date.now()
-    }
+    },
+    seen: { type: Boolean, default: false }
 });
 
-module.exports = model("line", LineSchema);
+module.exports = model("history", History);

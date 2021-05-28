@@ -100,7 +100,7 @@ router.get("/userbyname", async(req, res) => {
         });
     } else {
         res.status(400).json({
-            message: 'couldn\'t find anyuser with that name',
+            message: 'couldn\'t find any user with that name',
             success: false,
         });
     }

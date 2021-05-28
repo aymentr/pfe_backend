@@ -2,7 +2,6 @@ const http = require('http');
 const socketIO = require('socket.io');
 var express = require('express');
 const cors = require("cors");
-const router = require("express").Router();
 
 const bp = require("body-parser");
 const passport = require("passport");
@@ -12,12 +11,14 @@ require("./middlewares/passport")(passport);
 
 
 var app = express();
+app.use(bp.json());
 
 const { DB, PORT } = require("./config");
 
 const userController = require("./controllers/userController");
 const lineController = require("./controllers/linecontroller");
 const machineController = require("./controllers/machinecontroller");
+const historyController = require("./controllers/historyController");
 
 
 
@@ -25,10 +26,6 @@ const machineController = require("./controllers/machinecontroller");
 app.use(cors({ origin: "*" }));
 app.use(express.static(__dirname + '/dist'));
 
-// Middlewares
-
-app.use(bp.json());
-app.use(passport.initialize());
 const server = http.createServer(app);
 const io = socketIO(server, {
     cors: {
@@ -37,9 +34,13 @@ const io = socketIO(server, {
 });
 
 app.set('io', io);
+// Middlewares
+
+app.use(passport.initialize());
 app.use('/users', userController);
 app.use('/lines', lineController);
 app.use('/machines', machineController);
+app.use('/history', historyController);
 
 
 
@@ -64,7 +65,7 @@ const startApp = async() => {
         });
 
         // Start Listenting for the server on PORT
-        app.listen(PORT, () =>
+        server.listen(PORT, () =>
             success({ message: `Server started on PORT ${PORT}`, badge: true })
         );
     } catch (err) {
