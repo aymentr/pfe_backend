@@ -1,17 +1,20 @@
 const { Schema, model } = require("mongoose");
 
 const MachineSchema = new Schema({
-    ressource: {
+    _id: {
         type: String,
         required: false
+    },
+    server: {
+        type: String,
+        required: true
     },
     operation: {
         type: String,
         required: true
     },
-
-    designation: {
-        type: String,
+    mode: {
+        type: Boolean,
         required: false
     },
     line_id: {

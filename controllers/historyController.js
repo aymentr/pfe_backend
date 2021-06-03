@@ -17,7 +17,7 @@ router.get('/check', (req, res) => {
         arr.forEach((doc) => {
             i++;
             History.findByIdAndUpdate(doc._id, { $set: { seen: true } }, { new: true }, (err, h) => {
-                if (i == arr.length) {
+                if (i === arr.length) {
                     io.emit('history');
                     res.send(true);
                 }

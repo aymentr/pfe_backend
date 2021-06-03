@@ -7,11 +7,12 @@ var jwt = require('jsonwebtoken');
 router.post('/addMachine/:token', (req, res) => {
 
     const machine = new Machine({
-        ressource: req.body.ressource,
-        operation: req.body.operation,
-        designation: req.body.designation,
+        _id: req.body.ressource.toUpperCase(),
+        server: req.body.server,
+        operation: req.body.operation.toUpperCase(),
+        mode: req.body.mode,
         line_id: req.body.line_id
-    })
+    });
     const io = req.app.get('io');
     try {
         const user_id = jwt.decode(req.params.token.replace('Bearer ', '').trim()).user_id;
@@ -36,6 +37,11 @@ router.post('/addMachine/:token', (req, res) => {
 
                             history.save((err, h) => {
                                 if (!err) io.emit('history');
+                            })
+                        } else {
+                            res.status(503).json({
+                                message: "Machine ressource already exist!",
+                                success: false
                             })
                         }
                     });
@@ -77,7 +83,7 @@ router.delete('/deleteMachine/:token/:id', (req, res) => {
         const user_id = jwt.decode(req.params.token.replace('Bearer ', '').trim()).user_id;
         User.findById(user_id, (err, user) => {
             if (!err && user != null) {
-                if (User.role !== 'user') {
+                if (user.role === 'superadmin') {
                     Machine.findByIdAndRemove(req.params.id, (err, doc) => {
                         if (err) {
                             res.json({
@@ -86,14 +92,23 @@ router.delete('/deleteMachine/:token/:id', (req, res) => {
                             })
                         } else {
                             if (doc) {
-                                io.emit('machine_deleted');
-                                res.json({
-                                    message: "Machine has been deleted!",
-                                    success: true
+                                io.emit("machine_deleted");
+                                const history = new History({
+                                    table: "Machines",
+                                    operation: "Delete",
+                                    doc_id: doc._id,
+                                    username: user.username,
+                                    updated: doc,
+                                    user_id: user._id,
+                                });
+
+                                history.save((err, h) => {
+                                    if (!err) io.emit('history');
                                 })
+
                             } else {
                                 res.json({
-                                    message: "couldnt find Machine",
+                                    message: "couldn't find Machine",
                                     success: false
                                 })
                             }
@@ -135,7 +150,22 @@ router.put('/updateMachine/:token/:id', (req, res) => {
                     if (User.role !== 'user') {
                         Machine.findByIdAndUpdate(id, { $set: req.body }, { new: true }, (err, machine) => {
                             res.send(machine);
-                        }).then(() => io.emit("machine_updated"));
+                            const history = new History({
+                                table: "Machines",
+                                operation: "Update",
+                                doc_id: machine._id,
+                                username: user.username,
+                                updated: machine,
+                                user_id: user._id,
+                            });
+
+                            history.save((err, h) => {
+                                if (!err) io.emit('history');
+                            })
+                        }).then(() => {
+                            io.emit("machine_updated");
+                        });
+
                     } else {
                         res.status(403).json({
                             message: "Access denied! You are not authorized!",
